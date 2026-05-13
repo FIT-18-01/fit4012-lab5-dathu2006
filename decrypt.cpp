@@ -1,9 +1,10 @@
-/* decrypt.cpp
+	/* decrypt.cpp
  * Performs decryption using AES 128-bit
 
  */
 #include <iostream>
 #include <cstring>
+#include <vector>
 #include <fstream>
 #include <sstream>
 #include "structures.h"
@@ -124,9 +125,7 @@ void AESDecrypt(unsigned char * encryptedMessage, unsigned char * expandedKey, u
 
 	InitialRound(state, expandedKey+160);
 
-	int numberOfRounds = 9;
-
-	for (int i = 8; i >= 0; i--) {
+    for (int i = 8; i >= 0; i--) {
 		Round(state, expandedKey + (16 * (i + 1)));
 	}
 
@@ -144,33 +143,28 @@ int main() {
 	cout << " 128-bit AES Decryption Tool " << endl;
 	cout << "=============================" << endl;
 
-	// Read in the message from message.aes
-	string msgstr;
-	ifstream infile;
-	infile.open("message.aes", ios::in | ios::binary);
-
-	if (infile.is_open())
-	{
-		getline(infile, msgstr); // The first line of file is the message
-		cout << "Read in encrypted message from message.aes" << endl;
+    // Read in the message from message.aes (binary-safe)
+	vector<unsigned char> filedata;
+	ifstream infile("message.aes", ios::in | ios::binary);
+	if (infile.is_open()) {
+		infile.seekg(0, ios::end);
+		streamsize size = infile.tellg();
+		infile.seekg(0, ios::beg);
+		if (size > 0) {
+			filedata.resize(static_cast<size_t>(size));
+			infile.read(reinterpret_cast<char*>(filedata.data()), size);
+		}
 		infile.close();
+		cout << "Read in encrypted message from message.aes" << endl;
+	} else {
+		cout << "Unable to open file message.aes" << endl;
 	}
 
-	else cout << "Unable to open file";
-
-	char * msg = new char[msgstr.size()+1];
-
-	strcpy(msg, msgstr.c_str());
-
-	int n = strlen((const char*)msg);
-
+	int n = static_cast<int>(filedata.size());
 	unsigned char * encryptedMessage = new unsigned char[n];
 	for (int i = 0; i < n; i++) {
-		encryptedMessage[i] = (unsigned char)msg[i];
+		encryptedMessage[i] = filedata[i];
 	}
-
-	// Free memory
-	delete[] msg;
 
 	// Read in the key
 	string keystr;
@@ -200,7 +194,7 @@ int main() {
 
 	KeyExpansion(key, expandedKey);
 	
-	int messageLen = strlen((const char *)encryptedMessage);
+    int messageLen = n;
 
 	unsigned char * decryptedMessage = new unsigned char[messageLen];
 

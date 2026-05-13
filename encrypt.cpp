@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <cstring>
+#include <iomanip>
 #include <fstream>
 #include <sstream>
 #include "structures.h"
@@ -198,25 +199,27 @@ int main() {
 		AESEncrypt(paddedMessage+i, expandedKey, encryptedMessage+i);
 	}
 
-	cout << "Encrypted message in hex:" << endl;
+    cout << "Encrypted message in hex:" << endl;
+	cout << hex << setfill('0');
 	for (int i = 0; i < paddedMessageLen; i++) {
-		cout << hex << (int) encryptedMessage[i];
+		cout << setw(2) << (int)encryptedMessage[i];
 		cout << " ";
 	}
-
+	cout << dec << setfill(' ');
 	cout << endl;
 
-	// Write the encrypted string out to file "message.aes"
+	// Write the encrypted bytes out to file "message.aes"
 	ofstream outfile;
 	outfile.open("message.aes", ios::out | ios::binary);
 	if (outfile.is_open())
 	{
-		outfile << encryptedMessage;
+		outfile.write(reinterpret_cast<const char*>(encryptedMessage), paddedMessageLen);
 		outfile.close();
 		cout << "Wrote encrypted message to file message.aes" << endl;
 	}
-
-	else cout << "Unable to open file";
+	else {
+		cout << "Unable to open file" << endl;
+	}
 
 	// Free memory
 	delete[] paddedMessage;
